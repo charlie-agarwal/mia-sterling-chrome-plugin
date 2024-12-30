@@ -113,6 +113,17 @@
         <div id="goodreadsLastUpdate"></div>
         <button class="refresh-button" onclick="requestGoodreadsStats()">Refresh Goodreads</button>
     </div>
+    <div class="container">
+        <h2>BookBub Stats</h2>
+        <div class="stats-grid">
+            <div class="stat-item">
+                <div class="stat-label">Followers</div>
+                <div class="stat-value" id="bookbubFollowers">Loading...</div>
+            </div>
+        </div>
+        <div id="bookbubLastUpdate"></div>
+        <button class="refresh-button" onclick="requestBookbubStats()">Refresh BookBub</button>
+    </div>
     <script src="popup.js"></script>
 </body>
 

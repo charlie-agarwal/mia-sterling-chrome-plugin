@@ -107,12 +107,83 @@ function requestGoodreadsStats() {
     });
 }
 
+// Add these functions for BookBub
+function updateBookbubStats(bookbubData) {
+    if (!bookbubData) return;
+
+    document.getElementById('bookbubFollowers').textContent = bookbubData.followers || '0';
+    document.getElementById('bookbubLastUpdate').textContent = 'Updated ' + new Date().toLocaleTimeString();
+}
+
+function checkBookbubStats() {
+    chrome.storage.local.get(['bookbubData'], function (result) {
+        if (result.bookbubData) {
+            updateBookbubStats(result.bookbubData);
+
+            // If data is older than 1 hour, refresh it
+            const lastUpdated = new Date(result.bookbubData.lastUpdated);
+            if (Date.now() - lastUpdated.getTime() > 3600000) {
+                requestBookbubStats();
+            }
+        } else {
+            requestBookbubStats();
+        }
+    });
+}
+
+function requestBookbubStats() {
+    console.log('Requesting BookBub stats');
+    chrome.tabs.query({ active: true, currentWindow: true }, function (tabs) {
+        console.log('Current tab:', tabs[0].url);
+        if (tabs[0].url.includes('partners.bookbub.com')) {
+            console.log('Already on BookBub partners, sending message');
+            chrome.tabs.sendMessage(tabs[0].id, { type: 'GET_BOOKBUB_STATS' })
+                .catch(err => console.log('Error sending message:', err));
+        } else {
+            console.log('Creating new BookBub partners tab');
+            chrome.tabs.create({
+                url: 'https://partners.bookbub.com/',
+                active: false
+            }, function (tab) {
+                console.log('New BookBub tab created:', tab.id);
+
+                // First inject the content script
+                chrome.scripting.executeScript({
+                    target: { tabId: tab.id },
+                    files: ['content.js']
+                }).then(() => {
+                    console.log('Content script injected successfully');
+
+                    // Wait for page load
+                    setTimeout(() => {
+                        console.log('Sending message to BookBub tab');
+                        // Check if tab still exists before sending message
+                        chrome.tabs.get(tab.id, function (tabInfo) {
+                            if (chrome.runtime.lastError) {
+                                console.log('Tab was closed:', chrome.runtime.lastError);
+                                return;
+                            }
+                            chrome.tabs.sendMessage(tab.id, {
+                                type: 'GET_BOOKBUB_STATS'
+                            }).catch(err => console.log('Error sending message:', err));
+                        });
+                    }, 8000); // Wait 8 seconds
+                }).catch(err => {
+                    console.error('Failed to inject content script:', err);
+                });
+            });
+        }
+    });
+}
+
 // Listen for messages from the content script
 chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
     if (message.type === 'FOLLOWER_DATA') {
         updatePopup(message.data);
     } else if (message.type === 'GOODREADS_DATA' && message.data) {
         updateGoodreadsStats(message.data);
+    } else if (message.type === 'BOOKBUB_DATA' && message.data) {
+        updateBookbubStats(message.data);
     }
 });
 
@@ -120,4 +191,5 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
 document.addEventListener('DOMContentLoaded', () => {
     checkFollowerCount();
     checkGoodreadsStats();
+    checkBookbubStats();
 });

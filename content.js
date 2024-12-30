@@ -120,13 +120,114 @@ function extractGoodreadsStats() {
     tryExtract();
 }
 
-// Run when the page loads
-window.addEventListener('load', () => {
-    if (window.location.href.includes('goodreads.com/author/dashboard')) {
-        setTimeout(extractGoodreadsStats, 2000);
-    } else if (window.location.href.includes('author.amazon.com')) {
-        setTimeout(extractFollowerCount, 2000);
+// Add this function for BookBub stats extraction
+function extractBookbubStats() {
+    console.log('Attempting to extract BookBub stats');
+
+    // Check if we need to log in
+    const loginForm = document.querySelector('form[action="/login"]');
+    if (loginForm) {
+        console.log('Login form detected, need to authenticate first');
+        chrome.runtime.sendMessage({
+            type: 'BOOKBUB_DATA',
+            data: {
+                error: 'Login required',
+                followers: 'Login required'
+            }
+        });
+        return;
     }
+
+    // Function to check if page is ready
+    function isPageReady() {
+        const followersTitle = document.querySelector('.followers-title');
+        const followerCount = document.querySelector('.follower-count');
+        const isReady = followersTitle && followerCount;
+        console.log('Page ready check:', {
+            hasTitle: !!followersTitle,
+            hasCount: !!followerCount,
+            isReady: isReady,
+            url: window.location.href,
+            bodyClasses: document.body.className
+        });
+        return isReady;
+    }
+
+    // Function to extract data once page is ready
+    function extract() {
+        const followerCount = document.querySelector('.follower-count');
+        console.log('Found follower count element:', followerCount?.textContent);
+
+        if (followerCount) {
+            const followers = followerCount.textContent.trim();
+            console.log('Extracted followers count:', followers);
+
+            // Store the data
+            chrome.storage.local.set({
+                'bookbubData': {
+                    followers: followers,
+                    lastUpdated: new Date().toISOString()
+                }
+            }, function () {
+                // Notify popup and wait for confirmation
+                chrome.runtime.sendMessage({
+                    type: 'BOOKBUB_DATA',
+                    data: {
+                        followers: followers
+                    }
+                }, response => {
+                    console.log('Data sent successfully:', response);
+                });
+            });
+        } else {
+            console.error('Could not find BookBub followers element');
+            // Log the current page state
+            console.log('Current page structure:', {
+                hasFollowersTitle: !!document.querySelector('.followers-title'),
+                hasFollowerCount: !!document.querySelector('.follower-count'),
+                pageUrl: window.location.href,
+                html: document.body.innerHTML.substring(0, 1000) // First 1000 chars for debugging
+            });
+        }
+    }
+
+    // Wait for the page to load with increased timeout
+    setTimeout(() => {
+        let attempts = 0;
+        const maxAttempts = 30; // 15 seconds total
+
+        function tryExtract() {
+            console.log(`Attempt ${attempts + 1} to extract BookBub stats`);
+            if (isPageReady()) {
+                console.log('Page is ready, extracting data');
+                extract();
+            } else if (attempts < maxAttempts) {
+                attempts++;
+                setTimeout(tryExtract, 500);
+            } else {
+                console.error('Gave up waiting for BookBub page to load');
+            }
+        }
+
+        tryExtract();
+    }, 5000); // Wait 5 seconds before starting extraction attempts
+}
+
+// Add immediate logging when script loads
+console.log('Content script loaded on:', window.location.href);
+
+// Run when the page loads
+window.addEventListener('DOMContentLoaded', () => {
+    console.log('DOM Content loaded:', window.location.href);
+});
+
+window.addEventListener('load', () => {
+    console.log('Page fully loaded:', window.location.href);
+    if (window.location.href.includes('partners.bookbub.com')) {
+        console.log('On BookBub partners page, waiting before extraction');
+        setTimeout(extractBookbubStats, 2000);
+    }
+    // ... rest of the event listener
 });
 
 // Listen for requests from popup
@@ -135,6 +236,8 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
         extractFollowerCount();
     } else if (request.type === 'GET_GOODREADS_STATS') {
         extractGoodreadsStats();
+    } else if (request.type === 'GET_BOOKBUB_STATS') {
+        extractBookbubStats();
     }
     // Send response to keep the message channel open
     sendResponse({ received: true });
