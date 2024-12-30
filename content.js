@@ -241,6 +241,35 @@ function extractInstagramStats() {
     }
 }
 
+// Add this function for Facebook stats extraction
+function extractFacebookStats() {
+    console.log('Attempting to extract Facebook stats');
+
+    const followerElements = document.querySelectorAll('a[href$="/followers/"]');
+    if (followerElements.length > 0) {
+        const followerText = followerElements[0].textContent.trim();
+        const followers = followerText.split(' ')[0]; // Extract number from "95 followers"
+        console.log('Found Facebook followers:', followers);
+
+        // Store and send the data
+        chrome.storage.local.set({
+            'facebookData': {
+                followers: followers,
+                lastUpdated: new Date().toISOString()
+            }
+        }, function () {
+            chrome.runtime.sendMessage({
+                type: 'FACEBOOK_DATA',
+                data: {
+                    followers: followers
+                }
+            });
+        });
+    } else {
+        console.error('Could not find Facebook followers element');
+    }
+}
+
 // Add immediate logging when script loads
 console.log('Content script loaded on:', window.location.href);
 
@@ -268,6 +297,8 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
         extractBookbubStats();
     } else if (request.type === 'GET_INSTAGRAM_STATS') {
         extractInstagramStats();
+    } else if (request.type === 'GET_FACEBOOK_STATS') {
+        extractFacebookStats();
     }
     // Send response to keep the message channel open
     sendResponse({ received: true });

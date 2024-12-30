@@ -213,6 +213,43 @@ function requestInstagramStats() {
     });
 }
 
+// Add these functions for Facebook
+function updateFacebookStats(facebookData) {
+    if (!facebookData) return;
+
+    document.getElementById('facebookFollowers').textContent = facebookData.followers || '0';
+    document.getElementById('facebookLastUpdate').textContent = 'Updated ' + new Date().toLocaleTimeString();
+}
+
+function checkFacebookStats() {
+    chrome.storage.local.get(['facebookData'], function (result) {
+        if (result.facebookData) {
+            updateFacebookStats(result.facebookData);
+
+            // If data is older than 1 hour, refresh it
+            const lastUpdated = new Date(result.facebookData.lastUpdated);
+            if (Date.now() - lastUpdated.getTime() > 3600000) {
+                requestFacebookStats();
+            }
+        } else {
+            requestFacebookStats();
+        }
+    });
+}
+
+function requestFacebookStats() {
+    chrome.tabs.create({
+        url: 'https://www.facebook.com/mia.sterling.author',
+        active: false
+    }, function (tab) {
+        setTimeout(() => {
+            chrome.tabs.sendMessage(tab.id, {
+                type: 'GET_FACEBOOK_STATS'
+            });
+        }, 5000);
+    });
+}
+
 // Listen for messages from the content script
 chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
     if (message.type === 'FOLLOWER_DATA') {
@@ -223,6 +260,8 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
         updateBookbubStats(message.data);
     } else if (message.type === 'INSTAGRAM_DATA' && message.data) {
         updateInstagramStats(message.data);
+    } else if (message.type === 'FACEBOOK_DATA' && message.data) {
+        updateFacebookStats(message.data);
     }
 });
 
@@ -232,4 +271,5 @@ document.addEventListener('DOMContentLoaded', () => {
     checkGoodreadsStats();
     checkBookbubStats();
     checkInstagramStats();
+    checkFacebookStats();
 });

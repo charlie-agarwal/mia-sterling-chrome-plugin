@@ -32,7 +32,8 @@ let latestStats = {
     goodreads_total_ratings: 0,
     goodreads_reviews: 0,
     bookbub_followers: 0,
-    instagram_followers: 0
+    instagram_followers: 0,
+    facebook_followers: 0
 };
 
 // Listen for messages from content script
@@ -49,6 +50,8 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
         latestStats.goodreads_reviews = parseInt(message.data.totalReviews.replace(/,/g, '')) || 0;
     } else if (message.type === 'BOOKBUB_DATA' && message.data) {
         latestStats.bookbub_followers = parseInt(message.data.followers.replace(/,/g, '')) || 0;
+    } else if (message.type === 'FACEBOOK_DATA' && message.data) {
+        latestStats.facebook_followers = parseInt(message.data.followers.replace(/,/g, '')) || 0;
     }
 
     // Send data to API whenever we receive new stats
@@ -63,7 +66,9 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
     // we can close that tab now
     if ((message.type === 'FOLLOWER_DATA' ||
         message.type === 'GOODREADS_DATA' ||
-        message.type === 'BOOKBUB_DATA') &&
+        message.type === 'BOOKBUB_DATA' ||
+        message.type === 'INSTAGRAM_DATA' ||
+        message.type === 'FACEBOOK_DATA') &&
         sender.tab && !sender.tab.active) {
 
         setTimeout(() => {

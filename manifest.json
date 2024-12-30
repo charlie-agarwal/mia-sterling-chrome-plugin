@@ -15,7 +15,8 @@
         "https://partners.bookbub.com/*",
         "https://www.bookbub.com/*",
         "http://127.0.0.1:5000/*",
-        "https://www.instagram.com/*"
+        "https://www.instagram.com/*",
+        "https://www.facebook.com/*"
     ],
     "action": {
         "default_popup": "popup.html",
@@ -31,7 +32,8 @@
                 "https://www.goodreads.com/author/dashboard*",
                 "https://partners.bookbub.com/*",
                 "https://www.bookbub.com/*",
-                "https://www.instagram.com/*"
+                "https://www.instagram.com/*",
+                "https://www.facebook.com/*"
             ],
             "js": [
                 "content.js"
