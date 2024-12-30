@@ -213,6 +213,34 @@ function extractBookbubStats() {
     }, 5000); // Wait 5 seconds before starting extraction attempts
 }
 
+// Add this function for Instagram stats extraction
+function extractInstagramStats() {
+    console.log('Attempting to extract Instagram stats');
+
+    const followerElements = document.querySelectorAll('a[href$="/followers/"] span.html-span');
+    if (followerElements.length > 0) {
+        const followers = followerElements[0].textContent.trim();
+        console.log('Found Instagram followers:', followers);
+
+        // Store and send the data
+        chrome.storage.local.set({
+            'instagramData': {
+                followers: followers,
+                lastUpdated: new Date().toISOString()
+            }
+        }, function () {
+            chrome.runtime.sendMessage({
+                type: 'INSTAGRAM_DATA',
+                data: {
+                    followers: followers
+                }
+            });
+        });
+    } else {
+        console.error('Could not find Instagram followers element');
+    }
+}
+
 // Add immediate logging when script loads
 console.log('Content script loaded on:', window.location.href);
 
@@ -238,6 +266,8 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
         extractGoodreadsStats();
     } else if (request.type === 'GET_BOOKBUB_STATS') {
         extractBookbubStats();
+    } else if (request.type === 'GET_INSTAGRAM_STATS') {
+        extractInstagramStats();
     }
     // Send response to keep the message channel open
     sendResponse({ received: true });

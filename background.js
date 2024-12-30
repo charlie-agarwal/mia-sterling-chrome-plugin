@@ -31,7 +31,8 @@ let latestStats = {
     goodreads_avg_rating: 0,
     goodreads_total_ratings: 0,
     goodreads_reviews: 0,
-    bookbub_followers: 0
+    bookbub_followers: 0,
+    instagram_followers: 0
 };
 
 // Listen for messages from content script
