@@ -6,10 +6,12 @@
     "permissions": [
         "activeTab",
         "storage",
-        "scripting"
+        "scripting",
+        "tabs"
     ],
     "host_permissions": [
-        "https://author.amazon.com/*"
+        "https://author.amazon.com/*",
+        "https://www.goodreads.com/*"
     ],
     "action": {
         "default_popup": "popup.html",
@@ -21,7 +23,8 @@
     "content_scripts": [
         {
             "matches": [
-                "https://author.amazon.com/*"
+                "https://author.amazon.com/*",
+                "https://www.goodreads.com/author/dashboard*"
             ],
             "js": [
                 "content.js"

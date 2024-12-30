@@ -56,12 +56,68 @@ function requestFollowerCount() {
     });
 }
 
+// Add these functions to popup.js
+function updateGoodreadsStats(goodreadsData) {
+    if (!goodreadsData) return;
+
+    document.getElementById('avgRating').textContent = goodreadsData.avgRating || 'N/A';
+    document.getElementById('totalRatings').textContent = goodreadsData.totalRatings || '0';
+    document.getElementById('goodreadsFollowers').textContent = goodreadsData.followers || '0';
+    document.getElementById('totalReviews').textContent = goodreadsData.totalReviews || '0';
+    document.getElementById('totalBooks').textContent = goodreadsData.totalBooks || '0';
+    document.getElementById('goodreadsLastUpdate').textContent = 'Updated ' + new Date().toLocaleTimeString();
+}
+
+function checkGoodreadsStats() {
+    chrome.storage.local.get(['goodreadsData'], function (result) {
+        if (result.goodreadsData) {
+            updateGoodreadsStats(result.goodreadsData);
+
+            // If data is older than 1 hour, refresh it
+            const lastUpdated = new Date(result.goodreadsData.lastUpdated);
+            if (Date.now() - lastUpdated.getTime() > 3600000) {
+                requestGoodreadsStats();
+            }
+        } else {
+            requestGoodreadsStats();
+        }
+    });
+}
+
+function requestGoodreadsStats() {
+    chrome.tabs.query({ active: true, currentWindow: true }, function (tabs) {
+
+        if (tabs[0].url.includes('goodreads.com/author/dashboard')) {
+            chrome.tabs.sendMessage(tabs[0].id, { type: 'GET_GOODREADS_STATS' });
+        } else {
+            chrome.tabs.create({
+                url: 'https://www.goodreads.com/author/dashboard',
+                active: false
+            }, function (tab) {
+                // Increase timeout to ensure page loads
+                setTimeout(() => {
+                    chrome.tabs.sendMessage(tab.id, {
+                        type: 'GET_GOODREADS_STATS'
+                    }, response => {
+                        console.log('Message sent response:', response);
+                    });
+                }, 8000); // Increased timeout
+            });
+        }
+    });
+}
+
 // Listen for messages from the content script
 chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
     if (message.type === 'FOLLOWER_DATA') {
         updatePopup(message.data);
+    } else if (message.type === 'GOODREADS_DATA' && message.data) {
+        updateGoodreadsStats(message.data);
     }
 });
 
 // Initial load
-document.addEventListener('DOMContentLoaded', checkFollowerCount);
+document.addEventListener('DOMContentLoaded', () => {
+    checkFollowerCount();
+    checkGoodreadsStats();
+});

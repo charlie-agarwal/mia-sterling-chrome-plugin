@@ -51,6 +51,29 @@
         .refresh-button:hover {
             background-color: #45a049;
         }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 10px;
+            margin: 10px 0;
+        }
+
+        .stat-item {
+            background: #f5f5f5;
+            padding: 8px;
+            border-radius: 4px;
+        }
+
+        .stat-label {
+            font-size: 12px;
+            color: #666;
+        }
+
+        .stat-value {
+            font-size: 16px;
+            font-weight: bold;
+        }
     </style>
 </head>
 
@@ -62,6 +85,33 @@
         <button class="refresh-button" onclick="requestFollowerCount()">Refresh</button>
         <div id="status"></div>
         <div id="debugInfo"></div>
+    </div>
+    <div class="container">
+        <h2>Goodreads Stats</h2>
+        <div class="stats-grid">
+            <div class="stat-item">
+                <div class="stat-label">Average Rating</div>
+                <div class="stat-value" id="avgRating">Loading...</div>
+            </div>
+            <div class="stat-item">
+                <div class="stat-label">Total Ratings</div>
+                <div class="stat-value" id="totalRatings">Loading...</div>
+            </div>
+            <div class="stat-item">
+                <div class="stat-label">Followers</div>
+                <div class="stat-value" id="goodreadsFollowers">Loading...</div>
+            </div>
+            <div class="stat-item">
+                <div class="stat-label">Reviews</div>
+                <div class="stat-value" id="totalReviews">Loading...</div>
+            </div>
+            <div class="stat-item">
+                <div class="stat-label">Books</div>
+                <div class="stat-value" id="totalBooks">Loading...</div>
+            </div>
+        </div>
+        <div id="goodreadsLastUpdate"></div>
+        <button class="refresh-button" onclick="requestGoodreadsStats()">Refresh Goodreads</button>
     </div>
     <script src="popup.js"></script>
 </body>
